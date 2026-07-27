@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useReportsApi } from '@/composables/useReportsApi'
 import { useNuxtApp } from '#app'
 import {
@@ -9,10 +9,25 @@ import {
 } from '@/types/report'
 
 const route = useRoute()
+const router = useRouter()
 const api = useReportsApi()
 const { $showToast } = useNuxtApp()
 
 const ticket = computed(() => String(route.params.ticket))
+
+// Back navigation returns to wherever the user came from (Bugs & Features or
+// Feedback Administration), falling back to the work queue for email deep-links.
+const KNOWN_ORIGINS = ['/work', '/feedback-admin']
+const backTarget = computed(() => {
+  const from = String(route.query.from ?? '')
+  return KNOWN_ORIGINS.includes(from) ? from : '/work'
+})
+const backLabel = computed(() =>
+  backTarget.value === '/feedback-admin' ? 'Back to Feedback Administration' : 'Back to Bugs & Features',
+)
+function goBack() {
+  router.push(backTarget.value)
+}
 const report = ref<ReportDetail | null>(null)
 const loading = ref(false)
 const error = ref('')
@@ -174,7 +189,7 @@ onMounted(load)
 
 <template>
   <div class="mx-auto" style="max-width: 960px">
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" to="/work">Back to Bugs & Features</v-btn>
+    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-4" @click="goBack">{{ backLabel }}</v-btn>
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
     <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4" />

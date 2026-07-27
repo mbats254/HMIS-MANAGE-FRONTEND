@@ -1,8 +1,39 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useTesterActivityStore } from '@/stores/testerActivity'
 
 const store = useTesterActivityStore()
+
+// Date-range filter (YYYY-MM-DD). Empty = all time.
+const dateFrom = ref('')
+const dateTo = ref('')
+
+function todayStr(offsetDays = 0): string {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDays)
+  return d.toISOString().slice(0, 10)
+}
+
+function apply() {
+  store.load({ date_from: dateFrom.value || null, date_to: dateTo.value || null })
+}
+function clearFilter() {
+  dateFrom.value = ''
+  dateTo.value = ''
+  store.load()
+}
+function setToday() {
+  dateFrom.value = todayStr()
+  dateTo.value = todayStr()
+  apply()
+}
+function setLast7() {
+  dateFrom.value = todayStr(-6)
+  dateTo.value = todayStr()
+  apply()
+}
+
+const rangeActive = computed(() => !!(dateFrom.value || dateTo.value))
 
 onMounted(() => store.load())
 
@@ -48,7 +79,9 @@ const rows = computed(() =>
 const verdictColor = (v: string) => (v === 'pass' ? 'success' : v === 'fail' ? 'error' : 'grey')
 
 function downloadExcel() {
-  const date = new Date().toISOString().slice(0, 10)
+  const date = rangeActive.value
+    ? `${dateFrom.value || 'start'}_to_${dateTo.value || 'end'}`
+    : new Date().toISOString().slice(0, 10)
   const data = rows.value
 
   // Build CSV content (opens in Excel)
@@ -95,6 +128,32 @@ function downloadExcel() {
         Download Excel
       </v-btn>
     </div>
+
+    <!-- Date-range filter -->
+    <v-card rounded="lg" elevation="10" class="mb-4">
+      <v-card-text>
+        <div class="d-flex flex-wrap align-center ga-3">
+          <v-icon icon="mdi-calendar-range" color="primary" />
+          <v-text-field v-model="dateFrom" type="date" label="From" variant="outlined"
+            density="compact" hide-details style="max-width: 190px" />
+          <v-text-field v-model="dateTo" type="date" label="To" variant="outlined"
+            density="compact" hide-details style="max-width: 190px" />
+          <v-btn color="primary" variant="flat" prepend-icon="mdi-filter" @click="apply">Apply</v-btn>
+          <v-btn v-if="rangeActive" variant="text" prepend-icon="mdi-close" @click="clearFilter">Clear</v-btn>
+          <v-divider vertical class="mx-1" />
+          <v-btn size="small" variant="tonal" @click="setToday">Today</v-btn>
+          <v-btn size="small" variant="tonal" @click="setLast7">Last 7 days</v-btn>
+          <v-spacer />
+          <v-chip v-if="rangeActive" color="primary" variant="tonal" label>
+            {{ dateFrom || '…' }} → {{ dateTo || '…' }}
+          </v-chip>
+          <v-chip v-else variant="tonal" label>All time</v-chip>
+        </div>
+        <p v-if="rangeActive" class="text-caption textSecondary mb-0 mt-2">
+          Showing pass/fail runs recorded in this window (from the run history). “Untested” counts apply to all-time only.
+        </p>
+      </v-card-text>
+    </v-card>
 
     <v-alert v-if="store.error" type="error" variant="tonal" class="mb-4" :text="store.error" />
     <v-progress-linear v-if="store.loading" indeterminate color="primary" class="mb-4" />

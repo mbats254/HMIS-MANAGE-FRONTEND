@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { useTesterActivityApi, type TesterActivity } from '@/composables/useTesterActivityApi'
+import { useTesterActivityApi, type TesterActivity, type ActivityDateRange } from '@/composables/useTesterActivityApi'
 
 export const useTesterActivityStore = defineStore('testerActivity', () => {
   const api = useTesterActivityApi()
@@ -9,11 +9,11 @@ export const useTesterActivityStore = defineStore('testerActivity', () => {
   const loading = ref(false)
   const error = ref('')
 
-  async function load() {
+  async function load(range?: ActivityDateRange) {
     loading.value = true
     error.value = ''
     try {
-      data.value = await api.fetch()
+      data.value = await api.fetch(range)
     } catch (err: any) {
       error.value = err?.response?.data?.message || 'Failed to load tester activity.'
     } finally {

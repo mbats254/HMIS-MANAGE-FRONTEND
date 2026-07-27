@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useReportsApi } from '@/composables/useReportsApi'
 import { useAuthStore } from '@/stores/auth'
@@ -13,6 +13,15 @@ const items = ref<ReportSummary[]>([])
 const loading = ref(false)
 const scope = ref<'all' | 'mine'>('mine')
 
+// Assignee options (only used in the system-admin "all" view).
+const assignees = ref<{ id: number; name: string }[]>([])
+
+const filters = reactive({
+  assigned_to: null as number | null,
+  type: null as string | null,
+  sort: 'newest' as 'newest' | 'oldest',
+})
+
 const STATUS_COLORS: Record<string, string> = {
   new: 'info', under_review: 'secondary', assigned: 'primary',
   in_progress: 'warning', resolved: 'success', delivered: 'success', closed: 'grey',
@@ -21,12 +30,31 @@ const STATUS_COLORS: Record<string, string> = {
 async function load() {
   loading.value = true
   try {
-    const res = await api.work()
+    const params: Record<string, any> = { sort: filters.sort }
+    if (filters.type) params.type = filters.type
+    if (filters.assigned_to) params.assigned_to = filters.assigned_to
+    const res = await api.work(params)
     items.value = res.data
     scope.value = res.meta?.scope ?? 'mine'
+    // Load the assignee list once, only for the admin "all" view.
+    if (scope.value === 'all' && !assignees.value.length) {
+      assignees.value = await api.adminAssignableDevs()
+    }
   } finally {
     loading.value = false
   }
+}
+
+function clearFilters() {
+  filters.assigned_to = null
+  filters.type = null
+  filters.sort = 'newest'
+  load()
+}
+
+function openReport(ticketId: string) {
+  // Pass where we came from so the detail page's Back returns here.
+  router.push(`/feedback-admin/${ticketId}?from=${encodeURIComponent('/work')}`)
 }
 
 function label(s: string) {
@@ -61,6 +89,40 @@ onMounted(load)
       </v-chip>
     </div>
 
+    <!-- Filters -->
+    <v-card rounded="lg" elevation="10" class="mb-4">
+      <v-card-text>
+        <div class="d-flex flex-wrap align-center ga-3">
+          <v-select
+            v-model="filters.sort"
+            :items="[{ title: 'Newest first', value: 'newest' }, { title: 'Oldest first', value: 'oldest' }]"
+            label="Order by date"
+            variant="outlined" density="compact" hide-details
+            style="max-width: 200px"
+            @update:model-value="load"
+          />
+          <v-select
+            v-model="filters.type"
+            :items="[{ title: 'Bug', value: 'bug' }, { title: 'Feature', value: 'feature' }]"
+            label="Type" clearable
+            variant="outlined" density="compact" hide-details
+            style="max-width: 180px"
+            @update:model-value="load"
+          />
+          <v-select
+            v-if="scope === 'all'"
+            v-model="filters.assigned_to"
+            :items="assignees" item-title="name" item-value="id"
+            label="Assignee" clearable
+            variant="outlined" density="compact" hide-details
+            style="max-width: 220px"
+            @update:model-value="load"
+          />
+          <v-btn variant="text" prepend-icon="mdi-close" @click="clearFilters">Clear</v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
+
     <v-card rounded="lg" elevation="10">
       <v-data-table
         :headers="headers"
@@ -68,7 +130,7 @@ onMounted(load)
         :loading="loading"
         density="comfortable"
         hover
-        @click:row="(_e: any, { item }: any) => router.push(`/feedback-admin/${item.ticket_id}`)"
+        @click:row="(_e: any, { item }: any) => openReport(item.ticket_id)"
       >
         <template #item.reference="{ item }">
           <span class="font-weight-medium">{{ item.reference }}</span>

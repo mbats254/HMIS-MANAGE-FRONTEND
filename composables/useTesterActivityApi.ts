@@ -39,17 +39,26 @@ export interface TesterActivity {
   totals: { testers: number; qa: number; contributors?: number; pass: number; fail: number; executed: number }
   testers: TesterActivityRow[]
   recent: RecentVerdict[]
+  range?: { from: string | null; to: string | null }
+}
+
+export interface ActivityDateRange {
+  date_from?: string | null
+  date_to?: string | null
 }
 
 /**
  * Developer-only: track testers' journey (verdicts, authored tests, activity).
- *   GET /v1/platform/staff/tester-activity
+ *   GET /v1/platform/staff/tester-activity?date_from=&date_to=
  */
 export function useTesterActivityApi() {
   const { $axios } = useNuxtApp()
 
-  async function fetch(): Promise<TesterActivity> {
-    const { data } = await $axios.get('/v1/platform/staff/tester-activity')
+  async function fetch(range?: ActivityDateRange): Promise<TesterActivity> {
+    const params: Record<string, string> = {}
+    if (range?.date_from) params.date_from = range.date_from
+    if (range?.date_to) params.date_to = range.date_to
+    const { data } = await $axios.get('/v1/platform/staff/tester-activity', { params })
     return data.data
   }
 

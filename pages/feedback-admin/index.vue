@@ -124,7 +124,7 @@ onMounted(load)
     <!-- Table -->
     <v-card rounded="lg" elevation="10">
       <v-data-table :headers="headers" :items="items" :loading="loading" density="comfortable" hover
-        @click:row="(_e: any, { item }: any) => router.push(`/feedback-admin/${item.ticket_id}`)">
+        @click:row="(_e: any, { item }: any) => router.push(`/feedback-admin/${item.ticket_id}?from=${encodeURIComponent('/feedback-admin')}`)">
         <template #item.ticket_id="{ item }"><span class="font-mono text-caption">{{ item.ticket_id.slice(0, 8) }}</span></template>
         <template #item.type="{ item }">
           <v-chip :color="item.type === 'bug' ? 'error' : item.type === 'observation' ? 'teal' : 'primary'" size="small" variant="tonal" label>
