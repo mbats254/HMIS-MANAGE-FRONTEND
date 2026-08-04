@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useHospitalsApi } from '~/composables/useHospitalsApi'
-import type { CreateHospitalPayload, Hospital, PaginationMeta } from '~/types/hospital'
+import type { CreateHospitalPayload, CreateHospitalResponse, Hospital, PaginationMeta } from '~/types/hospital'
 
 export const useHospitalsStore = defineStore('hospitals', () => {
   const api = useHospitalsApi()
@@ -12,6 +12,9 @@ export const useHospitalsStore = defineStore('hospitals', () => {
   const loading = ref(false)
   const error = ref('')
   const saving = ref(false)
+  // Full response from the most recent create() call, kept around so the
+  // caller can render provisioning outcome instead of only reading it once.
+  const lastCreateResult = ref<CreateHospitalResponse | null>(null)
   // Field-level validation errors from the backend (422), keyed by field name.
   const fieldErrors = ref<Record<string, string[]>>({})
 
@@ -51,6 +54,7 @@ export const useHospitalsStore = defineStore('hospitals', () => {
     fieldErrors.value = {}
     try {
       const res = await api.create(payload)
+      lastCreateResult.value = res
       return { success: true as const, data: res }
     } catch (err: any) {
       if (err?.response?.status === 422) {
@@ -65,5 +69,5 @@ export const useHospitalsStore = defineStore('hospitals', () => {
     }
   }
 
-  return { items, meta, current, loading, error, saving, fieldErrors, fetchList, fetchOne, create }
+  return { items, meta, current, loading, error, saving, fieldErrors, lastCreateResult, fetchList, fetchOne, create }
 })

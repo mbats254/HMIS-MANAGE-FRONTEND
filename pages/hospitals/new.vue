@@ -72,6 +72,15 @@ function cleaned<T extends Record<string, any>>(obj: T): Partial<T> {
   return out as Partial<T>
 }
 
+const submitted = ref(false)
+
+const provisioningState = computed(() => {
+  const res = store.lastCreateResult
+  if (!res) return 'none'
+  if (!res.admin && !res.facility) return 'skipped'
+  return res.core_provisioned ? 'success' : 'warning'
+})
+
 async function submit() {
   const payload: CreateHospitalPayload = {
     ...cleaned(form),
@@ -83,7 +92,7 @@ async function submit() {
 
   const res = await store.create(payload)
   if (res.success) {
-    router.push(`/hospitals/${res.data.data.id}`)
+    submitted.value = true
   } else {
     // Jump back to the step that has the first error.
     const errs = Object.keys(store.fieldErrors)
@@ -91,6 +100,12 @@ async function submit() {
     else if (errs.some((e) => ['subdomain', 'custom_domain', 'subscription_tier', 'billing_status', 'max_user_slots', 'max_patient_records', 'status'].includes(e))) step.value = 2
     else step.value = 1
   }
+}
+
+function done() {
+  const id = store.lastCreateResult?.data.id
+  if (id) router.push(`/hospitals/${id}`)
+  else router.push('/hospitals')
 }
 </script>
 
@@ -102,7 +117,7 @@ async function submit() {
 
     <div class="mb-6">
       <h2 class="text-h4 font-weight-semibold">Register New Hospital</h2>
-      <p class="textSecondary">Step {{ step }} of {{ LAST_STEP }}</p>
+      <p v-if="!submitted" class="textSecondary">Step {{ step }} of {{ LAST_STEP }}</p>
     </div>
 
     <v-alert v-if="store.error" type="error" variant="tonal" class="mb-4">
@@ -112,7 +127,51 @@ async function submit() {
       </ul>
     </v-alert>
 
-    <v-card rounded="lg" elevation="10">
+    <!-- Result panel: shown after a successful create() instead of redirecting away immediately, -->
+    <!-- so a core-service provisioning failure (partial success) is visible before leaving the page. -->
+    <v-card v-if="submitted && store.lastCreateResult" rounded="lg" elevation="10">
+      <div class="pa-6">
+        <h3 class="text-h5 mb-4"><v-icon icon="mdi-check-circle" color="success" class="mr-2" />Hospital created</h3>
+
+        <v-list density="comfortable" lines="two" class="mb-4">
+          <v-list-item title="Facility">
+            <template #subtitle>
+              {{ store.lastCreateResult.facility
+                ? `${store.lastCreateResult.facility.name} (core: ${store.lastCreateResult.facility.core_facility_id || '—'})`
+                : 'No facility created' }}
+            </template>
+          </v-list-item>
+          <v-list-item title="Admin">
+            <template #subtitle>
+              {{ store.lastCreateResult.admin
+                ? `${store.lastCreateResult.admin.username} · ${store.lastCreateResult.admin.email}`
+                : 'No admin created' }}
+            </template>
+          </v-list-item>
+        </v-list>
+
+        <v-alert v-if="provisioningState === 'success'" type="success" variant="tonal" class="mb-2">
+          Synced to core-service.
+        </v-alert>
+        <v-alert v-else-if="provisioningState === 'warning'" type="warning" variant="tonal" class="mb-2">
+          <p class="font-weight-medium mb-1">Not yet synced to core-service.</p>
+          <p class="text-body-2 mb-1">{{ store.lastCreateResult.core_provisioning_error }}</p>
+          <p class="text-body-2 mb-0">
+            This hospital exists in hmis-manage but not yet in core-service.
+            Contact platform engineering to provision it manually.
+          </p>
+        </v-alert>
+        <v-alert v-else-if="provisioningState === 'skipped'" type="info" variant="tonal" class="mb-2">
+          No facility or admin was created, so core-service provisioning was not attempted.
+        </v-alert>
+
+        <div class="d-flex justify-end mt-4">
+          <v-btn color="primary" prepend-icon="mdi-check" @click="done">Done</v-btn>
+        </div>
+      </div>
+    </v-card>
+
+    <v-card v-else rounded="lg" elevation="10">
       <v-stepper v-model="step" :items="['Identity', 'Tenant & Billing', 'Facility', 'Admin']" flat hide-actions>
         <!-- STEP 1: Identity & Localization -->
         <template #item.1>

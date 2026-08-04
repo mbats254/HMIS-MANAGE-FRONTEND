@@ -28,6 +28,7 @@ export interface Hospital {
   max_patient_records: number
   status: HospitalStatus
   is_sandbox: boolean
+  core_org_id: string | null
   created_at: string | null
   updated_at: string | null
 }
@@ -76,8 +77,10 @@ export interface CreateHospitalPayload {
 
 export interface CreateHospitalResponse {
   data: Hospital
-  facility: { id: string; name: string } | null
+  facility: { id: string; name: string; core_facility_id: string | null } | null
   admin: { id: number; username: string; email: string } | null
+  core_provisioned: boolean
+  core_provisioning_error: string | null
 }
 
 // Vuetify chip colors per enum value (used in list + detail views).

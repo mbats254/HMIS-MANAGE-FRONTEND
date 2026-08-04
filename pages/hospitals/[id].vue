@@ -129,6 +129,32 @@ onMounted(() => store.fetchOne(id.value))
         </v-col>
       </v-row>
 
+      <!-- 5. Core-service provisioning -->
+      <v-row>
+        <v-col cols="12" md="6">
+          <v-card rounded="lg" elevation="10">
+            <v-card-item>
+              <v-card-title><v-icon icon="mdi-cloud-sync" class="mr-2" />Core Service Provisioning</v-card-title>
+            </v-card-item>
+            <v-card-text>
+              <template v-if="h.core_org_id">
+                <v-chip color="success" variant="flat" label class="mb-2">Provisioned</v-chip>
+                <v-list density="compact" lines="two">
+                  <v-list-item title="Core org ID" :subtitle="h.core_org_id" />
+                </v-list>
+              </template>
+              <template v-else>
+                <v-chip color="warning" variant="flat" label class="mb-2">Not provisioned in core-service</v-chip>
+                <p class="text-body-2 textSecondary mb-0">
+                  This hospital exists in hmis-manage but not yet in core-service.
+                  Contact platform engineering to provision it manually.
+                </p>
+              </template>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
       <!-- Integrations shortcut -->
       <v-card rounded="lg" elevation="10" class="mt-6">
         <v-card-text class="d-flex align-center justify-space-between pa-5">
