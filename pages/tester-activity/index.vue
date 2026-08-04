@@ -66,6 +66,14 @@ const headers = [
   { title: 'Last active', key: 'last_active_at', sortable: true },
 ]
 
+const moduleHeaders = [
+  { title: 'Module', key: 'name', sortable: true },
+  { title: 'Coverage', key: 'coverage', sortable: true },
+  { title: 'Passed', key: 'pass', sortable: true, align: 'end' as const },
+  { title: 'Failed', key: 'fail', sortable: true, align: 'end' as const },
+  { title: 'Outcome', key: 'outcome', sortable: false },
+]
+
 // Flatten for the data table.
 const rows = computed(() =>
   (t.value?.testers ?? []).map((x) => ({
@@ -225,6 +233,36 @@ function downloadExcel() {
         </v-data-table>
       </v-card>
 
+      <!-- Module coverage -->
+      <v-card rounded="lg" elevation="10" class="mb-6">
+        <v-card-item>
+          <v-card-title>Module coverage</v-card-title>
+          <v-card-subtitle>How far each module's cases have been run{{ rangeActive ? ' in this window' : '' }}, and whether runs mostly passed or failed.</v-card-subtitle>
+        </v-card-item>
+        <v-data-table :headers="moduleHeaders" :items="t.modules" :items-per-page="25" density="comfortable" hover>
+          <template #item.name="{ item }">
+            <span class="font-weight-medium">{{ item.name }}</span>
+            <span class="text-caption textSecondary ml-1">({{ item.code }})</span>
+          </template>
+          <template #item.coverage="{ item }">
+            <div style="min-width: 150px">
+              <v-progress-linear :model-value="item.coverage" height="8" rounded
+                :color="item.coverage >= 80 ? 'success' : item.coverage >= 40 ? 'warning' : 'error'" />
+              <span class="text-caption textSecondary">{{ item.tested_cases }}/{{ item.total_cases }} cases · {{ item.coverage }}%</span>
+            </div>
+          </template>
+          <template #item.pass="{ item }"><span class="text-success font-weight-medium">{{ item.pass }}</span></template>
+          <template #item.fail="{ item }"><span class="text-error font-weight-medium">{{ item.fail }}</span></template>
+          <template #item.outcome="{ item }">
+            <v-chip v-if="item.outcome !== 'none'" :color="item.outcome === 'pass' ? 'success' : 'error'" size="small" variant="tonal" label>
+              Mostly {{ item.outcome === 'pass' ? 'passing' : 'failing' }}
+            </v-chip>
+            <span v-else class="textSecondary text-caption">Not run yet</span>
+          </template>
+          <template #no-data><div class="pa-8 text-center textSecondary">No modules found.</div></template>
+        </v-data-table>
+      </v-card>
+
       <!-- Recent activity feed -->
       <v-card rounded="lg" elevation="10">
         <v-card-item>
@@ -243,6 +281,7 @@ function downloadExcel() {
                 <span class="font-weight-medium">{{ r.user }}</span>
                 marked <v-chip :color="verdictColor(r.verdict)" size="x-small" variant="tonal" label>{{ r.verdict.toUpperCase() }}</v-chip>
                 on <span class="font-weight-medium">{{ r.case_id }}</span>
+                <v-chip v-if="r.module" size="x-small" variant="tonal" label class="ml-1">{{ r.module }}</v-chip>
               </v-list-item-title>
               <v-list-item-subtitle>
                 {{ r.suite }} — {{ r.case_title }}<template v-if="r.note"> · “{{ r.note }}”</template>

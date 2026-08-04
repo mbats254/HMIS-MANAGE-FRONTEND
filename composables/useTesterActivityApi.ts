@@ -29,16 +29,30 @@ export interface RecentVerdict {
   verdict: 'pass' | 'fail'
   case_id: string | null
   case_title: string | null
+  module: string | null
+  module_code: string | null
   suite: string | null
   suite_slug: string | null
   note: string | null
   at: string | null
 }
 
+export interface ModuleCoverage {
+  code: string
+  name: string
+  total_cases: number
+  tested_cases: number
+  coverage: number
+  pass: number
+  fail: number
+  outcome: 'pass' | 'fail' | 'none'
+}
+
 export interface TesterActivity {
   totals: { testers: number; qa: number; contributors?: number; pass: number; fail: number; executed: number }
   testers: TesterActivityRow[]
   recent: RecentVerdict[]
+  modules: ModuleCoverage[]
   range?: { from: string | null; to: string | null }
 }
 
