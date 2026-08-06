@@ -40,21 +40,40 @@ export const useAuthStore = defineStore('auth', () => {
 
   const cookieOpts = { sameSite: 'lax' as const, path: '/', httpOnly: false }
 
-  const token = useCookie<string | null>('auth_token', cookieOpts)
+  const cookieToken = useCookie<string | null>('auth_token', cookieOpts)
 
-  // In Nuxt 3 SPA mode, useCookie inside a Pinia store can lose its reactive
-  // value during router navigations. Keep localStorage as a fallback so the
-  // token survives page navigations and dev-mode HMR reloads.
-  if (import.meta.client) {
-    if (!token.value) {
-      const stored = localStorage.getItem('_auth_token')
-      if (stored) token.value = stored
+  // In Nuxt 3 SPA mode the ref returned by useCookie can transiently read back
+  // null during a client-side navigation. The previous code only restored from
+  // localStorage once, at store setup — so when the ref dropped its value
+  // mid-session the global middleware saw isAuthenticated === false and bounced
+  // the user to /auth/login on the next page click.
+  //
+  // Fix: a plain ref is the source of truth, mirrored OUT to the cookie and
+  // localStorage. Navigation can no longer clear the session.
+  const readPersistedToken = (): string | null => {
+    if (cookieToken.value) return cookieToken.value
+    if (import.meta.client) {
+      try {
+        return localStorage.getItem('_auth_token')
+      } catch {
+        return null // storage blocked (private mode) — cookie still carries it
+      }
     }
-    watch(token, (val) => {
+    return null
+  }
+
+  const token = ref<string | null>(readPersistedToken())
+
+  watch(token, (val) => {
+    cookieToken.value = val
+    if (!import.meta.client) return
+    try {
       if (val) localStorage.setItem('_auth_token', val)
       else localStorage.removeItem('_auth_token')
-    }, { immediate: true })
-  }
+    } catch {
+      // storage unavailable — the cookie mirror above is enough
+    }
+  }, { immediate: true })
 
   const user = ref<AuthUser | null>(null)
   const apiError = ref('')

@@ -52,6 +52,13 @@ const sidebarItem: menu[] = [
                 roles: ['tester', 'developer', 'qa'],
             },
             {
+                title: 'My Test Cases',
+                icon: 'document-add-line-duotone',
+                to: '/my-test-cases',
+                // Authors (tester + developer) track their created cases' approval.
+                roles: ['tester', 'developer'],
+            },
+            {
                 title: 'Test Approvals',
                 icon: 'shield-check-line-duotone',
                 to: '/test-approvals',

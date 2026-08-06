@@ -50,6 +50,24 @@ export function useTestCasesApi() {
     return data
   }
 
+  // --- A tester's own submissions + approval status ---
+  async function myCases(status?: string) {
+    const { data } = await $axios.get(`${base}/my-test-cases`, {
+      params: status ? { status } : {},
+    })
+    return data as {
+      data: Array<{
+        id: number; case_id: string; title: string
+        module_name: string; module_code: string | null
+        suite_slug: string | null; suite_role: string | null
+        approval_status: 'pending' | 'approved' | 'rejected'
+        approval_note: string | null; approved_by: string | null
+        approved_at: string | null; created_at: string | null
+      }>
+      meta: { pending: number; approved: number; rejected: number; total: number }
+    }
+  }
+
   // --- System-admin approval workflow ---
   async function pendingCases() {
     const { data } = await $axios.get(`${base}/pending-test-cases`)
@@ -81,6 +99,6 @@ export function useTestCasesApi() {
 
   return {
     listSuites, getSuite, uploadSuite, recordResult, createCase, updateCase, deleteCase,
-    pendingCases, approveCase, rejectCase, runHistory,
+    myCases, pendingCases, approveCase, rejectCase, runHistory,
   }
 }

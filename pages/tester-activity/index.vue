@@ -66,8 +66,8 @@ const headers = [
   { title: 'Last active', key: 'last_active_at', sortable: true },
 ]
 
-const moduleHeaders = [
-  { title: 'Module', key: 'name', sortable: true },
+const serviceHeaders = [
+  { title: 'Service', key: 'name', sortable: true },
   { title: 'Coverage', key: 'coverage', sortable: true },
   { title: 'Passed', key: 'pass', sortable: true, align: 'end' as const },
   { title: 'Failed', key: 'fail', sortable: true, align: 'end' as const },
@@ -233,16 +233,15 @@ function downloadExcel() {
         </v-data-table>
       </v-card>
 
-      <!-- Module coverage -->
+      <!-- Service coverage -->
       <v-card rounded="lg" elevation="10" class="mb-6">
         <v-card-item>
-          <v-card-title>Module coverage</v-card-title>
-          <v-card-subtitle>How far each module's cases have been run{{ rangeActive ? ' in this window' : '' }}, and whether runs mostly passed or failed.</v-card-subtitle>
+          <v-card-title>Service coverage</v-card-title>
+          <v-card-subtitle>How far each service's cases have been run{{ rangeActive ? ' in this window' : '' }}, and whether runs mostly passed or failed.</v-card-subtitle>
         </v-card-item>
-        <v-data-table :headers="moduleHeaders" :items="t.modules" :items-per-page="25" density="comfortable" hover>
+        <v-data-table :headers="serviceHeaders" :items="t.services" :items-per-page="25" density="comfortable" hover>
           <template #item.name="{ item }">
             <span class="font-weight-medium">{{ item.name }}</span>
-            <span class="text-caption textSecondary ml-1">({{ item.code }})</span>
           </template>
           <template #item.coverage="{ item }">
             <div style="min-width: 150px">
@@ -259,7 +258,7 @@ function downloadExcel() {
             </v-chip>
             <span v-else class="textSecondary text-caption">Not run yet</span>
           </template>
-          <template #no-data><div class="pa-8 text-center textSecondary">No modules found.</div></template>
+          <template #no-data><div class="pa-8 text-center textSecondary">No services found.</div></template>
         </v-data-table>
       </v-card>
 

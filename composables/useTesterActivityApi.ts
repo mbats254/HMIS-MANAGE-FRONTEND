@@ -37,8 +37,7 @@ export interface RecentVerdict {
   at: string | null
 }
 
-export interface ModuleCoverage {
-  code: string
+export interface ServiceCoverage {
   name: string
   total_cases: number
   tested_cases: number
@@ -52,7 +51,7 @@ export interface TesterActivity {
   totals: { testers: number; qa: number; contributors?: number; pass: number; fail: number; executed: number }
   testers: TesterActivityRow[]
   recent: RecentVerdict[]
-  modules: ModuleCoverage[]
+  services: ServiceCoverage[]
   range?: { from: string | null; to: string | null }
 }
 
