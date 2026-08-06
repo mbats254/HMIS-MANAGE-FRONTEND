@@ -215,7 +215,10 @@ function downloadExcel() {
           <template #item.untested="{ item }"><span class="textSecondary">{{ item.untested }}</span></template>
           <template #item.pass_rate="{ item }">
             <div style="min-width: 120px">
+              <!-- bg-color/bg-opacity keep the track neutral; by default Vuetify
+                   tints it with the bar colour, so a 0% bar looked 100% full. -->
               <v-progress-linear :model-value="item.pass_rate" height="8" rounded
+                bg-color="on-surface" :bg-opacity="0.09"
                 :color="item.pass_rate >= 80 ? 'success' : item.pass_rate >= 50 ? 'warning' : 'error'" />
               <span class="text-caption textSecondary">{{ item.pass_rate }}%</span>
             </div>
@@ -246,6 +249,7 @@ function downloadExcel() {
           <template #item.coverage="{ item }">
             <div style="min-width: 150px">
               <v-progress-linear :model-value="item.coverage" height="8" rounded
+                bg-color="on-surface" :bg-opacity="0.09"
                 :color="item.coverage >= 80 ? 'success' : item.coverage >= 40 ? 'warning' : 'error'" />
               <span class="text-caption textSecondary">{{ item.tested_cases }}/{{ item.total_cases }} cases · {{ item.coverage }}%</span>
             </div>

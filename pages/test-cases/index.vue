@@ -19,6 +19,11 @@ const roleIcons: Record<string, string> = {
   'laboratory-technician-role': 'mdi-flask',
   'pharmacist-role': 'mdi-pill',
   'receptionist-role': 'mdi-account-tie',
+  'accountant-role': 'mdi-calculator-variant',
+  'procurement-officer-role': 'mdi-truck-delivery',
+  'cashier-role': 'mdi-cash-register',
+  'theatre-nurse-role': 'mdi-medical-bag',
+  'anaesthetist-role': 'mdi-sleep',
 }
 
 const overall = computed(() => {
@@ -34,6 +39,13 @@ const overall = computed(() => {
 })
 
 const pct = (n: number, total: number) => (total ? Math.round((n / total) * 100) : 0)
+
+// Bar segment width. Uses the unrounded ratio so a single result still moves the
+// bar (1 of 642 rounds to 0%), with a small floor so it stays visible.
+const segWidth = (n: number, total: number) => {
+  if (!total || n <= 0) return '0%'
+  return `${Math.max((n / total) * 100, 1.5)}%`
+}
 
 function pickFile() {
   fileInput.value?.click()
@@ -77,7 +89,14 @@ async function onFile(e: Event) {
           <div><p class="text-overline textSecondary mb-0">Failed</p><p class="text-h4 font-weight-semibold text-error mb-0">{{ overall.fail }}</p></div>
           <div><p class="text-overline textSecondary mb-0">Untested</p><p class="text-h4 font-weight-semibold textSecondary mb-0">{{ overall.untested }}</p></div>
           <div class="flex-grow-1" style="min-width: 200px">
-            <v-progress-linear :model-value="pct(overall.pass + overall.fail, overall.total)" height="10" rounded color="primary" />
+            <div
+              class="run-track"
+              style="height: 10px"
+              :title="`${overall.pass} passed, ${overall.fail} failed, ${overall.untested} not run`"
+            >
+              <div class="run-seg bg-success" :style="{ width: segWidth(overall.pass, overall.total) }" />
+              <div class="run-seg bg-error" :style="{ width: segWidth(overall.fail, overall.total) }" />
+            </div>
             <p class="text-caption textSecondary mt-1 mb-0">{{ pct(overall.pass + overall.fail, overall.total) }}% executed</p>
           </div>
         </div>
@@ -117,7 +136,17 @@ async function onFile(e: Event) {
                 <p class="text-caption textSecondary mb-0">{{ s.total }} cases · {{ s.modules }} modules</p>
               </div>
             </div>
-            <v-progress-linear :model-value="pct(s.stats.pass + s.stats.fail, s.total)" height="8" rounded color="primary" class="mb-2" />
+            <div class="d-flex align-center justify-space-between mb-1">
+              <span class="text-caption textSecondary">{{ pct(s.stats.pass + s.stats.fail, s.total) }}% executed</span>
+            </div>
+            <div
+              class="run-track mb-2"
+              style="height: 8px"
+              :title="`${s.stats.pass} passed, ${s.stats.fail} failed, ${s.stats.untested} not run`"
+            >
+              <div class="run-seg bg-success" :style="{ width: segWidth(s.stats.pass, s.total) }" />
+              <div class="run-seg bg-error" :style="{ width: segWidth(s.stats.fail, s.total) }" />
+            </div>
             <div class="d-flex gap-2">
               <v-chip size="x-small" color="success" variant="tonal">{{ s.stats.pass }} pass</v-chip>
               <v-chip size="x-small" color="error" variant="tonal">{{ s.stats.fail }} fail</v-chip>
@@ -133,6 +162,17 @@ async function onFile(e: Event) {
 <style scoped>
 .role-card { transition: transform 0.15s ease; }
 .role-card:hover { transform: translateY(-2px); }
+
+/* Neutral track so an empty bar reads as empty. Vuetify's v-progress-linear
+   tints its own track with the bar colour, which made a 0% bar look full. */
+.run-track {
+  display: flex;
+  width: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(var(--v-theme-on-surface), 0.09);
+}
+.run-seg { transition: width 0.35s ease; }
 .gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
 .gap-6 { gap: 24px; }

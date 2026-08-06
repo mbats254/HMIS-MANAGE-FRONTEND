@@ -3,9 +3,27 @@ export type Severity = 'low' | 'medium' | 'high' | 'critical'
 export type ReportStatus =
   | 'new' | 'under_review' | 'assigned' | 'in_progress' | 'resolved' | 'delivered' | 'closed'
 
+/**
+ * Modules of the Afya HMIS under test, named exactly as the live sidebar
+ * section headers at app.afyaanalytics.ai, in sidebar order.
+ *
+ * Mirrors Report::MODULES on the backend — keep the two in step, the API
+ * validates submissions against its own copy.
+ */
 export const MODULES = [
-  'Dashboard', 'Patients', 'Appointments', 'Billing', 'Pharmacy',
-  'Laboratory', 'Radiology', 'Admissions', 'Reports', 'Settings', 'Other',
+  'Dashboard',
+  'Reception',
+  'Outpatient',
+  'Clinics',
+  'In-Patient',
+  'Finance',
+  'Theatre',
+  'Reports',
+  'Setup',
+  'Point of Sale',
+  'Inventory & Procurement',
+  'Users & Staff',
+  'Other',
 ]
 
 export const SEVERITIES: Severity[] = ['low', 'medium', 'high', 'critical']

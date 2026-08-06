@@ -20,7 +20,25 @@ const filters = reactive({
   assigned_to: null as number | null,
   type: null as string | null,
   sort: 'newest' as 'newest' | 'oldest',
+  date_from: '' as string,
+  date_to: '' as string,
 })
+
+function clearRange() {
+  filters.date_from = ''
+  filters.date_to = ''
+  load()
+}
+
+function fmtDate(v: string | null) {
+  if (!v) return '—'
+  return new Date(v).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function fmtTime(v: string | null) {
+  if (!v) return ''
+  return new Date(v).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+}
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'info', under_review: 'secondary', assigned: 'primary',
@@ -33,6 +51,8 @@ async function load() {
     const params: Record<string, any> = { sort: filters.sort }
     if (filters.type) params.type = filters.type
     if (filters.assigned_to) params.assigned_to = filters.assigned_to
+    if (filters.date_from) params.date_from = filters.date_from
+    if (filters.date_to) params.date_to = filters.date_to
     const res = await api.work(params)
     items.value = res.data
     scope.value = res.meta?.scope ?? 'mine'
@@ -49,6 +69,8 @@ function clearFilters() {
   filters.assigned_to = null
   filters.type = null
   filters.sort = 'newest'
+  filters.date_from = ''
+  filters.date_to = ''
   load()
 }
 
@@ -68,6 +90,7 @@ const headers = [
   { title: 'Severity', key: 'severity', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
   { title: 'Assignee', key: 'assignee', sortable: false },
+  { title: 'Raised', key: 'created_at', sortable: false },
 ]
 
 onMounted(load)
@@ -120,6 +143,28 @@ onMounted(load)
           />
           <v-btn variant="text" prepend-icon="mdi-close" @click="clearFilters">Clear</v-btn>
         </div>
+
+        <v-divider class="my-3" />
+
+        <div class="d-flex flex-wrap align-center ga-3">
+          <!-- Dates only apply when Filter is clicked, so a half-typed range
+               (from set, to still empty) never fires a query on its own. -->
+          <v-text-field
+            v-model="filters.date_from" type="date" label="Raised from"
+            variant="outlined" density="compact" hide-details clearable
+            style="max-width: 190px" @keyup.enter="load"
+          />
+          <v-text-field
+            v-model="filters.date_to" type="date" label="Raised to"
+            variant="outlined" density="compact" hide-details clearable
+            style="max-width: 190px" @keyup.enter="load"
+          />
+          <v-btn color="primary" prepend-icon="mdi-filter-variant" :loading="loading" @click="load">
+            Filter
+          </v-btn>
+          <v-btn v-if="filters.date_from || filters.date_to" variant="text"
+            prepend-icon="mdi-calendar-remove" @click="clearRange">Clear dates</v-btn>
+        </div>
       </v-card-text>
     </v-card>
 
@@ -151,6 +196,12 @@ onMounted(load)
         </template>
         <template #item.assignee="{ item }">
           {{ item.assignee || '—' }}
+        </template>
+        <template #item.created_at="{ item }">
+          <div style="min-width: 110px">
+            <div>{{ fmtDate(item.created_at) }}</div>
+            <div class="text-caption textSecondary">{{ fmtTime(item.created_at) }}</div>
+          </div>
         </template>
         <template #no-data>
           <div class="pa-10 text-center">
