@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useReportsApi } from '@/composables/useReportsApi'
 import {
   MODULES, SEVERITIES, STATUS_LABELS, STATUS_COLORS,
   type ReportSummary, type ReportStatus,
 } from '@/types/report'
 
-const router = useRouter()
 const api = useReportsApi()
 
 const items = ref<ReportSummary[]>([])
@@ -124,7 +122,7 @@ onMounted(load)
     <!-- Table -->
     <v-card rounded="lg" elevation="10">
       <v-data-table :headers="headers" :items="items" :loading="loading" density="comfortable" hover
-        @click:row="(_e: any, { item }: any) => router.push(`/feedback-admin/${item.ticket_id}?from=${encodeURIComponent('/feedback-admin')}`)">
+        @click:row="(_e: any, { item }: any) => window.open(`/feedback-admin/${item.ticket_id}?from=${encodeURIComponent('/feedback-admin')}`, '_blank')">
         <template #item.ticket_id="{ item }"><span class="font-mono text-caption">{{ item.ticket_id.slice(0, 8) }}</span></template>
         <template #item.type="{ item }">
           <v-chip :color="item.type === 'bug' ? 'error' : item.type === 'observation' ? 'teal' : 'primary'" size="small" variant="tonal" label>
