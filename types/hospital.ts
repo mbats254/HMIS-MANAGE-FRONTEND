@@ -83,6 +83,14 @@ export interface CreateHospitalResponse {
   core_provisioning_error: string | null
 }
 
+// Response of POST /v1/platform/hospitals/{id}/provision (retry).
+export interface RetryProvisioningResponse {
+  data: Hospital
+  facility: { id: string; name: string; core_facility_id: string | null } | null
+  core_provisioned: boolean
+  core_provisioning_error: string | null
+}
+
 // Vuetify chip colors per enum value (used in list + detail views).
 export const STATUS_COLOR: Record<HospitalStatus, string> = {
   PROVISIONING: 'info',

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useHospitalsApi } from '~/composables/useHospitalsApi'
-import type { CreateHospitalPayload, CreateHospitalResponse, Hospital, PaginationMeta } from '~/types/hospital'
+import type { CreateHospitalPayload, CreateHospitalResponse, Hospital, PaginationMeta, RetryProvisioningResponse } from '~/types/hospital'
 
 export const useHospitalsStore = defineStore('hospitals', () => {
   const api = useHospitalsApi()
@@ -12,9 +12,12 @@ export const useHospitalsStore = defineStore('hospitals', () => {
   const loading = ref(false)
   const error = ref('')
   const saving = ref(false)
+  const retrying = ref(false)
   // Full response from the most recent create() call, kept around so the
   // caller can render provisioning outcome instead of only reading it once.
   const lastCreateResult = ref<CreateHospitalResponse | null>(null)
+  // Same idea for the most recent retryProvisioning() call.
+  const lastRetryResult = ref<RetryProvisioningResponse | null>(null)
   // Field-level validation errors from the backend (422), keyed by field name.
   const fieldErrors = ref<Record<string, string[]>>({})
 
@@ -69,5 +72,28 @@ export const useHospitalsStore = defineStore('hospitals', () => {
     }
   }
 
-  return { items, meta, current, loading, error, saving, fieldErrors, lastCreateResult, fetchList, fetchOne, create }
+  async function retryProvisioning(id: string) {
+    retrying.value = true
+    error.value = ''
+    try {
+      const res = await api.retryProvisioning(id)
+      lastRetryResult.value = res
+      if (current.value && current.value.id === id) current.value.core_org_id = res.data.core_org_id
+      return { success: true as const, data: res }
+    } catch (err: any) {
+      error.value =
+        err?.response?.status === 409
+          ? err.response.data?.message || 'Already provisioned.'
+          : err?.response?.data?.message || 'Failed to retry provisioning.'
+      return { success: false as const }
+    } finally {
+      retrying.value = false
+    }
+  }
+
+  return {
+    items, meta, current, loading, error, saving, retrying, fieldErrors,
+    lastCreateResult, lastRetryResult,
+    fetchList, fetchOne, create, retryProvisioning,
+  }
 })

@@ -5,13 +5,15 @@ import type {
   Hospital,
   HospitalListResponse,
   HospitalShowResponse,
+  RetryProvisioningResponse,
 } from '~/types/hospital'
 
 /**
  * Read access to platform hospitals (organizations / tenants).
  * Backend:
- *   GET /v1/platform/hospitals       (paginated)
- *   GET /v1/platform/hospitals/{id}
+ *   GET  /v1/platform/hospitals       (paginated)
+ *   GET  /v1/platform/hospitals/{id}
+ *   POST /v1/platform/hospitals/{id}/provision (retry core-service sync)
  */
 export function useHospitalsApi() {
   const { $axios } = useNuxtApp()
@@ -31,5 +33,10 @@ export function useHospitalsApi() {
     return data
   }
 
-  return { list, show, create }
+  async function retryProvisioning(id: string): Promise<RetryProvisioningResponse> {
+    const { data } = await $axios.post<RetryProvisioningResponse>(`/v1/platform/hospitals/${id}/provision`)
+    return data
+  }
+
+  return { list, show, create, retryProvisioning }
 }

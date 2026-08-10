@@ -145,10 +145,23 @@ onMounted(() => store.fetchOne(id.value))
               </template>
               <template v-else>
                 <v-chip color="warning" variant="flat" label class="mb-2">Not provisioned in core-service</v-chip>
-                <p class="text-body-2 textSecondary mb-0">
+                <p class="text-body-2 textSecondary mb-3">
                   This hospital exists in hmis-manage but not yet in core-service.
-                  Contact platform engineering to provision it manually.
+                  Retry re-syncs the organization and its facility; the admin
+                  account (if any) still needs manual provisioning.
                 </p>
+
+                <v-alert v-if="store.lastRetryResult?.core_provisioned" type="success" variant="tonal" class="mb-3">
+                  Synced to core-service.
+                </v-alert>
+                <v-alert v-else-if="store.lastRetryResult" type="error" variant="tonal" class="mb-3">
+                  Retry failed: {{ store.lastRetryResult.core_provisioning_error }}
+                </v-alert>
+
+                <v-btn color="primary" variant="tonal" prepend-icon="mdi-refresh"
+                  :loading="store.retrying" @click="store.retryProvisioning(id)">
+                  Retry provisioning
+                </v-btn>
               </template>
             </v-card-text>
           </v-card>
