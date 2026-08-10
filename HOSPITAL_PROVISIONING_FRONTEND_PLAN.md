@@ -7,6 +7,7 @@ Nothing proposed in v1 was ever built — `types/hospital.ts`, `stores/hospitals
 same "gap" state v1 described. What changed is the platform around them: the
 backend gained a real notifications system since v1 was written —
 
+
 - `NotificationController` (`GET /v1/platform/notifications`,
   `POST /notifications/{id}/read`, `POST /notifications/read-all`) is live and
   routed (`routes/api.php:61-63`).
