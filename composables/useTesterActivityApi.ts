@@ -41,7 +41,13 @@ export interface ServiceCoverage {
   name: string
   total_cases: number
   tested_cases: number
+  /** % of the service's cases that have been run — execution progress. */
   coverage: number
+  /** Distinct roles owning cases here, and how many have run at least one. */
+  roles_total: number
+  roles_covered: number
+  /** Roles with cases here that have run nothing — the real blind spots. */
+  roles_pending: string[]
   pass: number
   fail: number
   outcome: 'pass' | 'fail' | 'none'

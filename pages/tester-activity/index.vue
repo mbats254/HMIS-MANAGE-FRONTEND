@@ -68,7 +68,11 @@ const headers = [
 
 const serviceHeaders = [
   { title: 'Service', key: 'name', sortable: true },
-  { title: 'Coverage', key: 'coverage', sortable: true },
+  // "Executed", not "Coverage" — it measures how much of the test pack has
+  // been run, which is a different question from whether the service is
+  // verified from every role's perspective (the Roles column).
+  { title: 'Executed', key: 'coverage', sortable: true },
+  { title: 'Roles covered', key: 'roles_covered', sortable: true },
   { title: 'Passed', key: 'pass', sortable: true, align: 'end' as const },
   { title: 'Failed', key: 'fail', sortable: true, align: 'end' as const },
   { title: 'Outcome', key: 'outcome', sortable: false },
@@ -240,7 +244,11 @@ function downloadExcel() {
       <v-card rounded="lg" elevation="10" class="mb-6">
         <v-card-item>
           <v-card-title>Service coverage</v-card-title>
-          <v-card-subtitle>How far each service's cases have been run{{ rangeActive ? ' in this window' : '' }}, and whether runs mostly passed or failed.</v-card-subtitle>
+          <v-card-subtitle>
+            <strong>Executed</strong> = how much of the test pack has been run{{ rangeActive ? ' in this window' : '' }}.
+            <strong>Roles covered</strong> = how many of the roles that own cases here have actually run one —
+            a service can be fully executed and still never tested from a role's point of view.
+          </v-card-subtitle>
         </v-card-item>
         <v-data-table :headers="serviceHeaders" :items="t.services" :items-per-page="25" density="comfortable" hover>
           <template #item.name="{ item }">
@@ -252,6 +260,25 @@ function downloadExcel() {
                 bg-color="on-surface" :bg-opacity="0.09"
                 :color="item.coverage >= 80 ? 'success' : item.coverage >= 40 ? 'warning' : 'error'" />
               <span class="text-caption textSecondary">{{ item.tested_cases }}/{{ item.total_cases }} cases · {{ item.coverage }}%</span>
+            </div>
+          </template>
+          <template #item.roles_covered="{ item }">
+            <div style="min-width: 150px">
+              <v-chip
+                size="small" label variant="tonal"
+                :color="item.roles_total && item.roles_covered === item.roles_total ? 'success'
+                  : item.roles_covered === 0 ? 'error' : 'warning'"
+              >
+                {{ item.roles_covered }}/{{ item.roles_total }} roles
+              </v-chip>
+              <v-tooltip v-if="item.roles_pending.length" location="top">
+                <template #activator="{ props }">
+                  <div v-bind="props" class="text-caption text-error mt-1 text-truncate" style="max-width: 190px">
+                    Not run by: {{ item.roles_pending.join(', ') }}
+                  </div>
+                </template>
+                <span>{{ item.roles_pending.join(', ') }}</span>
+              </v-tooltip>
             </div>
           </template>
           <template #item.pass="{ item }"><span class="text-success font-weight-medium">{{ item.pass }}</span></template>
